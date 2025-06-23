@@ -78,6 +78,8 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Data Files
+journal.json
 
 # Scripts and notebooks
 code-drafts.ipynb

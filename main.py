@@ -1,16 +1,8 @@
-# 📖 Simple Journal Application
-# This is a simple command line journal application that allows users to add and list journal entries.
-# It uses a JSON file to store the entries and provides a command line interface using `typer`.
-# # The application allows users to add entries with a title and content, and list all entries with their
-# respective dates.
-# 📄 Import necessary libraries
 import sys
 import json
 from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from pathlib import Path
-
-# import typer for command line interface
 import typer
 
 # 📁 File where journal entries are stored
@@ -27,19 +19,27 @@ class JournalEntry:
 
 
 # 📥 Load entries from the file
-def load_entries():
+def load_entries() -> list[JournalEntry]:
     if DB_FILE.stat().st_size == 0:
         return []
-    with open(DB_FILE, "r", encoding="utf-8") as file:
-        data = json.load(file)
-        return [
-            JournalEntry(
-                title=entry["title"],
-                content=entry["content"],
-                date=entry.get("date", datetime.now().isoformat()),
-            )
-            for entry in data
-        ]
+    try:
+        with open(DB_FILE, "r", encoding="utf-8") as file:
+            data = json.load(file)
+            return [
+                JournalEntry(
+                    title=entry["title"],
+                    content=entry["content"],
+                    date=entry.get("date", datetime.now().isoformat()),
+                )
+                for entry in data
+            ]
+    except (json.JSONDecodeError, KeyError) as e:
+        # If JSON is corrupted or invalid, start with empty list
+        typer.echo(f"⚠️ Warning: Journal file is corrupted. Starting fresh. Error: {e}")
+        # Reset the file to empty array
+        with open(DB_FILE, "w", encoding="utf-8") as file:
+            json.dump([], file)
+        return []
 
 
 # 💾 Save entries to the file
@@ -52,20 +52,29 @@ def save_entries(entries):
 app = typer.Typer()
 
 
-# ➕ Add a new entry
-@app.command()
-def add(
-    title: str = typer.Option(..., prompt="Title", help="Title of the journal entry"),
-    content: str = typer.Option(
-        ..., prompt="Content", help="Content of the journal entry"
-    ),
-):
-    """➕ Add a new journal entry."""
-    typer.echo(f"Added entry: {title} - {content} successfully.")
+# Extracted function
+def add_entry(title: str, content: str) -> None:
     entries = load_entries()
     new_entry = JournalEntry(title=title, content=content)
     entries.append(new_entry)
     save_entries(entries)
+    typer.echo(f"✅ Added entry: '{title}' successfully.")
+
+
+# ➕ Add a new entry
+@app.command()
+def add(
+    title: str = typer.Option(..., prompt="📝 Title"),
+    content: str = typer.Option(..., prompt="📓 Content"),
+):
+    """➕ Add a new journal entry."""
+    # If title or content are not provided, prompt for them
+    if title is None:
+        title = typer.prompt("Title")
+    if content is None:
+        content = typer.prompt("Content")
+    add_entry(title, content)
+    typer.echo(f"✅ Added entry: '{title}' successfully.")
 
 
 # 📘 List journal entries
@@ -79,8 +88,8 @@ def list():
         typer.echo("📘 Your Journal:")
         n = 0
         # Iterate through entries and print them
-        for entry in entries:
-            n = n + 1
+        for i, entry in enumerate(entries, start=1):
+            n = i
             print(f"\n{n} 📅 {entry.date}")
             print(f"📓 {entry.title}")
             print(entry.content)
@@ -104,30 +113,45 @@ def exit():
     typer.Exit(code=0)
 
 
-# prompt user for CLI commands
+# Help function (not decorated as command, just internal)
+def show_help():
+    typer.echo(
+        "🛟 Help: Use the commands 'add', 'list', 'count', or 'exit' to interact with your journal."
+    )
+
+
+# Interactive menu for the Journal application
 def interactive_menu():
     typer.echo(
         "Welcome to your Journal! 📖"
         "\nChoose an option:"
-        "\n1. ➕ Add a new entry: add"
-        "\n2. 📘 List all entries: list"
-        "\n3. 📊 Count total entries: count"
+        "\n1. ➕ Add a new entry"
+        "\n2. 📘 List all entries"
+        "\n3. 📊 Count total entries"
         "\n4. 🙌🏼 Exit"
         "\n5. 🛟 Help"
     )
-    choice = typer.prompt("Enter your choice (1-4)", type=int)
-    if choice == 1:
-        add()
-    elif choice == 2:
-        list()
-    elif choice == 3:
-        count()
-    elif choice == 4:
-        exit()
-    elif choice == 5:
-        typer.echo(
-            "🛟 Help: Use the commands 'add', 'list', 'count', or 'exit' to interact with your journal."
-        )
+
+    options = {
+        1: lambda: add(title=None, content=None),
+        2: list,
+        3: count,
+        4: exit,
+        5: show_help,
+    }
+
+    try:
+        choice = typer.prompt("Enter your choice (1-5)", type=int)
+        action = options.get(choice)
+        if action:
+            action()
+        else:
+            typer.echo("❌ Invalid choice. Please enter a number from 1 to 5.")
+            interactive_menu()
+    except typer.Abort:
+        typer.echo("\n👋 Exiting...")
+    except Exception as e:
+        typer.echo(f"⚠️ Error: {e}")
 
 
 # 🏁 Main entry point for the application
@@ -135,6 +159,7 @@ if __name__ == "__main__":
     # If no arguments are provided, run the interactive menu
     if len(sys.argv) == 1:
         interactive_menu()
+
     else:
         app()
         # If arguments are provided, run the app normally
