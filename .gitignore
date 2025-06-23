@@ -78,6 +78,14 @@ target/
 # Jupyter Notebook
 .ipynb_checkpoints
 
+# Data Files
+journal.json
+
+# Scripts and notebooks
+code-drafts.ipynb
+typer_test.py
+
+
 # IPython
 profile_default/
 ipython_config.py
