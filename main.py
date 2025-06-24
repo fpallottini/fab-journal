@@ -16,7 +16,7 @@ class JournalEntry:
     title: str
     content: str
     date: str = field(default_factory=lambda: datetime.now().isoformat())
-    tags: list[str] = field(default_factory=list)
+    tags_list: list[str] = field(default_factory=list)
 
 
 # 📥 Load entries from the file
@@ -31,6 +31,7 @@ def load_entries() -> list[JournalEntry]:
                     title=entry["title"],
                     content=entry["content"],
                     date=entry.get("date", datetime.now().isoformat()),
+                    tags_list=entry.get("tags_list", []),
                 )
                 for entry in data
             ]
@@ -54,9 +55,9 @@ app = typer.Typer()
 
 
 # Extracted function
-def add_entry(title: str, content: str) -> None:
+def add_entry(title: str, content: str, tags_list: list) -> None:
     entries = load_entries()
-    new_entry = JournalEntry(title=title, content=content)
+    new_entry = JournalEntry(title=title, content=content, tags_list=tags_list)
     entries.append(new_entry)
     save_entries(entries)
     typer.echo(f"✅ Added entry: '{title}' successfully.")
@@ -67,6 +68,9 @@ def add_entry(title: str, content: str) -> None:
 def add(
     title: str = typer.Option(..., prompt="📝 Title"),
     content: str = typer.Option(..., prompt="📓 Content"),
+    tags: str = typer.Option(
+        "", prompt="🏷️ Tags (comma-separated)", help="Optional tags for the entry    "
+    ),
 ):
     """➕ Add a new journal entry."""
     # If title or content are not provided, prompt for them
@@ -74,7 +78,9 @@ def add(
         title = typer.prompt("Title")
     if content is None:
         content = typer.prompt("Content")
-    add_entry(title, content)
+    # If tags are provided, split them into a list
+    tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
+    add_entry(title, content, tags_list)
     typer.echo(f"✅ Added entry: '{title}' successfully.")
 
 
@@ -94,6 +100,9 @@ def list():
             print(f"\n{n} 📅 {entry.date}")
             print(f"📓 {entry.title}")
             print(entry.content)
+            print(
+                f"🏷️ Tags: {', '.join(entry.tags_list) if entry.tags_list else 'None'}"
+            )
             print("-" * 30)
 
 
@@ -133,8 +142,14 @@ def interactive_menu():
         "\n5. 🛟 Help"
     )
 
+    def add_entry_interactive():
+        title = typer.prompt("📝 Title")
+        content = typer.prompt("📓 Content")
+        tags = typer.prompt("🏷️ Tags (comma-separated, optional)", default="")
+        add(title=title, content=content, tags=tags)
+
     options = {
-        1: lambda: add(title=None, content=None),
+        1: add_entry_interactive,
         2: list,
         3: count,
         4: exit,
