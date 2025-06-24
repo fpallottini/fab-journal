@@ -16,6 +16,7 @@ class JournalEntry:
     title: str
     content: str
     date: str = field(default_factory=lambda: datetime.now().isoformat())
+    tags: list[str] = field(default_factory=list)
 
 
 # 📥 Load entries from the file
