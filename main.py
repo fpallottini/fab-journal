@@ -73,12 +73,6 @@ def add(
     ),
 ):
     """➕ Add a new journal entry."""
-    # If title or content are not provided, prompt for them
-    if title is None:
-        title = typer.prompt("Title")
-    if content is None:
-        content = typer.prompt("Content")
-    # If tags are provided, split them into a list
     tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
     add_entry(title, content, tags_list)
     typer.echo(f"✅ Added entry: '{title}' successfully.")
@@ -130,6 +124,35 @@ def show_help():
     )
 
 
+# Search function
+@app.command()
+def search():
+    """🔍 Search for entries by query."""
+    query = typer.prompt("🔍 Enter search query")
+    entries = load_entries()
+    results = [
+        entry
+        for entry in entries
+        if query.lower() in entry.title.lower()
+        or query.lower() in entry.content.lower()
+    ]
+    if not results:
+        typer.echo("📭 No entries found matching your query.")
+    else:
+        typer.echo("📘 Your Results:")
+        n = 0
+        # Iterate through results and print them
+        for i, entry in enumerate(results, start=1):
+            n = i
+            print(f"\n{n} 📅 {entry.date}")
+            print(f"📓 {entry.title}")
+            print(entry.content)
+            print(
+                f"🏷️ Tags: {', '.join(entry.tags_list) if entry.tags_list else 'None'}"
+            )
+            print("-" * 30)
+
+
 # Interactive menu for the Journal application
 def interactive_menu():
     typer.echo(
@@ -140,6 +163,7 @@ def interactive_menu():
         "\n3. 📊 Count total entries"
         "\n4. 🙌🏼 Exit"
         "\n5. 🛟 Help"
+        "\n6. 🔍 Search entries"
     )
 
     def add_entry_interactive():
@@ -154,10 +178,11 @@ def interactive_menu():
         3: count,
         4: exit,
         5: show_help,
+        6: search,
     }
 
     try:
-        choice = typer.prompt("Enter your choice (1-5)", type=int)
+        choice = typer.prompt("Enter your choice (1-6)", type=int)
         action = options.get(choice)
         if action:
             action()
