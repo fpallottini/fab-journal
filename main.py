@@ -4,6 +4,8 @@ from dataclasses import dataclass, asdict, field
 from datetime import datetime
 from pathlib import Path
 import typer
+from uuid import uuid4
+
 
 # 📁 File where journal entries are stored
 DB_FILE = Path("journal.json")
@@ -17,6 +19,7 @@ class JournalEntry:
     content: str
     date: str = field(default_factory=lambda: datetime.now().isoformat())
     tags_list: list[str] = field(default_factory=list)
+    id: str = field(default_factory=lambda: str(uuid4()))
 
 
 # 📥 Load entries from the file
@@ -32,6 +35,7 @@ def load_entries() -> list[JournalEntry]:
                     content=entry["content"],
                     date=entry.get("date", datetime.now().isoformat()),
                     tags_list=entry.get("tags_list", []),
+                    id=entry.get("id", str(uuid4())),
                 )
                 for entry in data
             ]
@@ -97,6 +101,7 @@ def list():
             print(
                 f"🏷️ Tags: {', '.join(entry.tags_list) if entry.tags_list else 'None'}"
             )
+            print(f"ID: {entry.id}")
             print("-" * 30)
 
 
@@ -135,6 +140,7 @@ def search():
         for entry in entries
         if query.lower() in entry.title.lower()
         or query.lower() in entry.content.lower()
+        or query.lower() in (tag.lower() for tag in entry.tags_list)
     ]
     if not results:
         typer.echo("📭 No entries found matching your query.")
@@ -150,6 +156,34 @@ def search():
             print(
                 f"🏷️ Tags: {', '.join(entry.tags_list) if entry.tags_list else 'None'}"
             )
+            print(f"ID: {entry.id}")
+            print("-" * 30)
+
+
+@app.command()
+def query_tag(tag: str = typer.Option(..., prompt="🏷️ Enter tag to filter by")):
+    """🔍 Filter entries by tag."""
+    entries = load_entries()
+    results = [
+        entry
+        for entry in entries
+        if tag.lower() in (t.lower() for t in entry.tags_list)
+    ]
+    if not results:
+        typer.echo(f"📭 No entries found with tag '{tag}'.")
+    else:
+        typer.echo(f"📘 Entries with tag '{tag}':")
+        n = 0
+        # Iterate through results and print them
+        for i, entry in enumerate(results, start=1):
+            n = i
+            print(f"\n{n} 📅 {entry.date}")
+            print(f"📓 {entry.title}")
+            print(entry.content)
+            print(
+                f"🏷️ Tags: {', '.join(entry.tags_list) if entry.tags_list else 'None'}"
+            )
+            print(f"ID: {entry.id}")
             print("-" * 30)
 
 
@@ -164,6 +198,7 @@ def interactive_menu():
         "\n4. 🙌🏼 Exit"
         "\n5. 🛟 Help"
         "\n6. 🔍 Search entries"
+        "\n7. 🔍 Filter entries by tag"
     )
 
     def add_entry_interactive():
@@ -172,6 +207,10 @@ def interactive_menu():
         tags = typer.prompt("🏷️ Tags (comma-separated, optional)", default="")
         add(title=title, content=content, tags=tags)
 
+    def query_tag_interactive():
+        tag = typer.prompt("🏷️ Enter tag to filter by...")
+        query_tag(tag=tag)
+
     options = {
         1: add_entry_interactive,
         2: list,
@@ -179,10 +218,11 @@ def interactive_menu():
         4: exit,
         5: show_help,
         6: search,
+        7: query_tag_interactive,
     }
 
     try:
-        choice = typer.prompt("Enter your choice (1-6)", type=int)
+        choice = typer.prompt("Enter your choice (1-7)", type=int)
         action = options.get(choice)
         if action:
             action()
