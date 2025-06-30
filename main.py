@@ -64,7 +64,6 @@ def add_entry(title: str, content: str, tags_list: list) -> None:
     new_entry = JournalEntry(title=title, content=content, tags_list=tags_list)
     entries.append(new_entry)
     save_entries(entries)
-    typer.echo(f"✅ Added entry: '{title}' successfully.")
 
 
 # ➕ Add a new entry
@@ -129,19 +128,32 @@ def show_help():
     )
 
 
-# Search function
-@app.command()
-def search():
-    """🔍 Search for entries by query."""
-    query = typer.prompt("🔍 Enter search query")
-    entries = load_entries()
-    results = [
+# Helper function to find entries matching the query
+def find_entries(entries, query):
+    """Helper function to find entries matching the query."""
+    q = query.lower()
+    return [
         entry
         for entry in entries
-        if query.lower() in entry.title.lower()
-        or query.lower() in entry.content.lower()
-        or query.lower() in (tag.lower() for tag in entry.tags_list)
+        if q in entry.title.lower()
+        or q in entry.content.lower()
+        or q.lower() in (tag.lower() for tag in entry.tags_list)
     ]
+
+
+# Helper function to find entries matching the query for tags
+def find_tags(entries, query):
+    """Helper function to find entries matching the query."""
+    q = query.lower()
+    return [
+        entry
+        for entry in entries
+        if q.lower() in (tag.lower() for tag in entry.tags_list)
+    ]
+
+
+def display_results(results):
+    """Helper function to display search results."""
     if not results:
         typer.echo("📭 No entries found matching your query.")
     else:
@@ -161,30 +173,19 @@ def search():
 
 
 @app.command()
+def search(query: str = typer.Option(..., prompt="🔍 Enter search query")):
+    """🔍 Search for entries by query."""
+    entries = load_entries()
+    results = find_entries(entries, query)
+    display_results(results)
+
+
+@app.command()
 def query_tag(tag: str = typer.Option(..., prompt="🏷️ Enter tag to filter by")):
     """🔍 Filter entries by tag."""
     entries = load_entries()
-    results = [
-        entry
-        for entry in entries
-        if tag.lower() in (t.lower() for t in entry.tags_list)
-    ]
-    if not results:
-        typer.echo(f"📭 No entries found with tag '{tag}'.")
-    else:
-        typer.echo(f"📘 Entries with tag '{tag}':")
-        n = 0
-        # Iterate through results and print them
-        for i, entry in enumerate(results, start=1):
-            n = i
-            print(f"\n{n} 📅 {entry.date}")
-            print(f"📓 {entry.title}")
-            print(entry.content)
-            print(
-                f"🏷️ Tags: {', '.join(entry.tags_list) if entry.tags_list else 'None'}"
-            )
-            print(f"ID: {entry.id}")
-            print("-" * 30)
+    results = find_tags(entries, tag)
+    display_results(results)
 
 
 # Interactive menu for the Journal application
@@ -211,13 +212,19 @@ def interactive_menu():
         tag = typer.prompt("🏷️ Enter tag to filter by...")
         query_tag(tag=tag)
 
+    def search_interactive():
+        # always prompt for a string, so Typer’s OptionInfo never leaks through
+        query = typer.prompt("🔍 Enter search query")
+        # call your decorated function with an actual str
+        search(query=query)
+
     options = {
         1: add_entry_interactive,
         2: list,
         3: count,
         4: exit,
         5: show_help,
-        6: search,
+        6: search_interactive,
         7: query_tag_interactive,
     }
 
