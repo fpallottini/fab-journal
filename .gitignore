@@ -84,6 +84,7 @@ journal.json
 # Scripts and notebooks
 code-drafts.ipynb
 typer_test.py
+starter_code.py
 
 
 # IPython
