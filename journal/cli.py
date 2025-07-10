@@ -1,6 +1,12 @@
 import typer
-from .models import JournalEntry
-from .db import add_entry, load_entries, save_entries, show_help, find_entries, find_tags, display_results, interactive_menu
+from .db import (
+    add_entry,
+    load_entries,
+    show_help,
+    find_entries,
+    find_tags,
+    display_results,
+)
 
 
 # type for the command line interface
@@ -54,14 +60,6 @@ def count():
     typer.echo(f"\n 📊 Total entries 👁  in the Journal🟰 {count}")
 
 
-# Exit the application
-@app.command()
-def exit():
-    """🙌🏼 Exit the Journal application."""
-    typer.echo("🙌🏼 Thank you for using the Journal! Goodbye!")
-    typer.Exit(code=0)
-
-
 @app.command()
 def search(query: str = typer.Option(..., prompt="🔍 Enter search query")):
     """🔍 Search for entries by query."""
@@ -76,3 +74,64 @@ def query_tag(tag: str = typer.Option(..., prompt="🏷️ Enter tag to filter b
     entries = load_entries()
     results = find_tags(entries, tag)
     display_results(results)
+
+
+@app.command()
+def interactive():
+    """🛠️ Start interactive mode."""
+    typer.echo(
+        "Welcome to your Journal! 📖"
+        "\nChoose an option:"
+        "\n1. ➕ Add a new entry"
+        "\n2. 📘 List all entries"
+        "\n3. 📊 Count total entries"
+        "\n4. 🙌🏼 Exit"
+        "\n5. 🛟 Help"
+        "\n6. 🔍 Search entries"
+        "\n7. 🔍 Filter entries by tag"
+    )
+
+    def add_entry_interactive():
+        title = typer.prompt("📝 Title")
+        content = typer.prompt("📓 Content")
+        tags = typer.prompt("🏷️ Tags (comma-separated, optional)", default="")
+        add(title=title, content=content, tags=tags)
+
+    def query_tag_interactive():
+        tag = typer.prompt("🏷️ Enter tag to filter by...")
+        query_tag(tag=tag)
+
+    def search_interactive():
+        # always prompt for a string, so Typer’s OptionInfo never leaks through
+        query = typer.prompt("🔍 Enter search query")
+        # call your decorated function with an actual str
+        search(query=query)
+
+    def exit_interactive():
+        typer.echo("🙌🏼 Thank you for using the Journal! Goodbye!")
+        raise typer.Abort()
+
+    options = {
+        1: add_entry_interactive,
+        2: list,
+        3: count,
+        4: exit_interactive,
+        5: show_help,
+        6: search_interactive,
+        7: query_tag_interactive,
+    }
+
+    while True:
+        try:
+            choice = typer.prompt("Enter your choice (1-7)", type=int)
+            action = options.get(choice)
+            if action:
+                action()
+            else:
+                typer.echo("❌ Invalid choice. Please enter a number from 1 to 5.")
+                continue
+        except typer.Abort:
+            typer.echo("\n👋 Exiting...")
+            break
+        except Exception as e:
+            typer.echo(f"⚠️ Error: {e}")

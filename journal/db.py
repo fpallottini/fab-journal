@@ -1,11 +1,10 @@
-import sys
 from .models import JournalEntry
 import json
 import typer
 from pathlib import Path
 from datetime import datetime
 from uuid import uuid4
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict
 
 
 # 📁 File where journal entries are stored
@@ -43,6 +42,7 @@ def load_entries() -> list[JournalEntry]:
 def save_entries(entries):
     with open(DB_FILE, "w", encoding="utf-8") as file:
         json.dump([asdict(entry) for entry in entries], file, indent=2)
+
 
 # Extracted function
 def add_entry(title: str, content: str, tags_list: list) -> None:
@@ -101,58 +101,3 @@ def display_results(results):
             )
             print(f"ID: {entry.id}")
             print("-" * 30)
-
-
-# Interactive menu for the Journal application
-def interactive_menu():
-    from .cli import add, list, count, exit, search, query_tag
-    typer.echo(
-        "Welcome to your Journal! 📖"
-        "\nChoose an option:"
-        "\n1. ➕ Add a new entry"
-        "\n2. 📘 List all entries"
-        "\n3. 📊 Count total entries"
-        "\n4. 🙌🏼 Exit"
-        "\n5. 🛟 Help"
-        "\n6. 🔍 Search entries"
-        "\n7. 🔍 Filter entries by tag"
-    )
-
-    def add_entry_interactive():
-        title = typer.prompt("📝 Title")
-        content = typer.prompt("📓 Content")
-        tags = typer.prompt("🏷️ Tags (comma-separated, optional)", default="")
-        add(title=title, content=content, tags=tags)
-
-    def query_tag_interactive():
-        tag = typer.prompt("🏷️ Enter tag to filter by...")
-        query_tag(tag=tag)
-
-    def search_interactive():
-        # always prompt for a string, so Typer’s OptionInfo never leaks through
-        query = typer.prompt("🔍 Enter search query")
-        # call your decorated function with an actual str
-        search(query=query)
-
-    options = {
-        1: add_entry_interactive,
-        2: list,
-        3: count,
-        4: exit,
-        5: show_help,
-        6: search_interactive,
-        7: query_tag_interactive,
-    }
-
-    try:
-        choice = typer.prompt("Enter your choice (1-7)", type=int)
-        action = options.get(choice)
-        if action:
-            action()
-        else:
-            typer.echo("❌ Invalid choice. Please enter a number from 1 to 5.")
-            interactive_menu()
-    except typer.Abort:
-        typer.echo("\n👋 Exiting...")
-    except Exception as e:
-        typer.echo(f"⚠️ Error: {e}")
