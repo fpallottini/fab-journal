@@ -1,11 +1,11 @@
-import sys
-from .models import JournalEntry
 import json
 import typer
 from pathlib import Path
 from datetime import datetime
 from uuid import uuid4
-from dataclasses import dataclass, asdict, field
+from dataclasses import asdict
+
+from .models import JournalEntry
 
 
 # 📁 File where journal entries are stored
@@ -43,6 +43,7 @@ def load_entries() -> list[JournalEntry]:
 def save_entries(entries):
     with open(DB_FILE, "w", encoding="utf-8") as file:
         json.dump([asdict(entry) for entry in entries], file, indent=2)
+
 
 # Extracted function
 def add_entry(title: str, content: str, tags_list: list) -> None:
@@ -106,6 +107,7 @@ def display_results(results):
 # Interactive menu for the Journal application
 def interactive_menu():
     from .cli import add, list, count, exit, search, query_tag
+
     typer.echo(
         "Welcome to your Journal! 📖"
         "\nChoose an option:"

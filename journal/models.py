@@ -1,6 +1,7 @@
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, field
 from datetime import datetime
 from uuid import uuid4
+
 
 # 📝 Dataclass representing a journal entry
 @dataclass
