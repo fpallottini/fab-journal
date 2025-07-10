@@ -120,15 +120,16 @@ def interactive():
         6: search_interactive,
         7: query_tag_interactive,
     }
+    num_options = len(options)
 
     while True:
         try:
-            choice = typer.prompt("Enter your choice (1-7)", type=int)
+            choice = typer.prompt(f"Enter your choice (1-{num_options})", type=int)
             action = options.get(choice)
             if action:
                 action()
             else:
-                typer.echo("❌ Invalid choice. Please enter a number from 1 to 5.")
+                typer.echo(f"❌ Invalid choice. Please enter a number from 1 to {num_options}.")
                 continue
         except typer.Abort:
             typer.echo("\n👋 Exiting...")
