@@ -1,6 +1,6 @@
 import sys
-from .cli import app, add, list, count, exit, search, query_tag
-from .db import interactive_menu
+from cli import app, add, list, count, exit, search, query_tag
+from db import interactive_menu
 
 
 # # 🏁 Main entry point for the application

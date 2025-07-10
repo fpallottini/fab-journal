@@ -1,6 +1,15 @@
 import typer
-from .models import JournalEntry
-from .db import add_entry, load_entries, save_entries, show_help, find_entries, find_tags, display_results, interactive_menu
+from models import JournalEntry
+from db import (
+    add_entry,
+    load_entries,
+    save_entries,
+    show_help,
+    find_entries,
+    find_tags,
+    display_results,
+    interactive_menu,
+)
 
 
 # type for the command line interface
