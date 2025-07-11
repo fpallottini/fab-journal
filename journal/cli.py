@@ -9,6 +9,7 @@ from .db import (
 )
 
 
+
 # type for the command line interface
 app = typer.Typer()
 
@@ -74,7 +75,6 @@ def query_tag(tag: str = typer.Option(..., prompt="🏷️ Enter tag to filter b
     entries = load_entries()
     results = find_tags(entries, tag)
     display_results(results)
-
 
 @app.command()
 def interactive():
