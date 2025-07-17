@@ -80,6 +80,7 @@ target/
 
 # Data Files
 journal.json
+test_journal.json
 
 # Scripts and notebooks
 code-drafts.ipynb

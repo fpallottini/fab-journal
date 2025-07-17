@@ -16,3 +16,8 @@ build-backend = "hatchling.build"
 
 [tool.hatch.build]
 include = ["journal/"]
+
+[dependency-groups]
+dev = [
+    "pytest>=8.4.1",
+]

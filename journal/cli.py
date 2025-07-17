@@ -1,13 +1,15 @@
 import typer
-from .db import (
-    add_entry,
-    load_entries,
-    show_help,
-    find_entries,
-    find_tags,
-    display_results,
-)
+from journal.db import db
 
+
+# from .db import (
+#     add_entry,
+#     load_entries,
+#     show_help,
+#     find_entries,
+#     find_tags,
+#     display_results,
+# )
 
 
 # type for the command line interface
@@ -25,7 +27,7 @@ def add(
 ):
     """➕ Add a new journal entry."""
     tags_list = [tag.strip() for tag in tags.split(",") if tag.strip()] if tags else []
-    add_entry(title, content, tags_list)
+    db.add_entry(title, content, tags_list)
     typer.echo(f"✅ Added entry: '{title}' successfully.")
 
 
@@ -33,7 +35,7 @@ def add(
 @app.command()
 def list():
     """📘 List all journal entries."""
-    entries = load_entries()
+    entries = db.load_entries()
     if not entries:
         typer.echo("📭 No entries found.")
     else:
@@ -56,7 +58,7 @@ def list():
 @app.command()
 def count():
     """📊 Count total journal entries."""
-    entries = load_entries()
+    entries = db.load_entries()
     count = len(entries)
     typer.echo(f"\n 📊 Total entries 👁  in the Journal🟰 {count}")
 
@@ -64,17 +66,18 @@ def count():
 @app.command()
 def search(query: str = typer.Option(..., prompt="🔍 Enter search query")):
     """🔍 Search for entries by query."""
-    entries = load_entries()
-    results = find_entries(entries, query)
-    display_results(results)
+    entries = db.load_entries()
+    results = db.find_entries(entries, query)
+    db.display_results(results)
 
 
 @app.command()
 def query_tag(tag: str = typer.Option(..., prompt="🏷️ Enter tag to filter by")):
     """🔍 Filter entries by tag."""
-    entries = load_entries()
-    results = find_tags(entries, tag)
-    display_results(results)
+    entries = db.load_entries()
+    results = db.find_tags(entries, tag)
+    db.display_results(results)
+
 
 @app.command()
 def interactive():
@@ -116,7 +119,7 @@ def interactive():
         2: list,
         3: count,
         4: exit_interactive,
-        5: show_help,
+        5: db.show_help,
         6: search_interactive,
         7: query_tag_interactive,
     }
@@ -129,7 +132,9 @@ def interactive():
             if action:
                 action()
             else:
-                typer.echo(f"❌ Invalid choice. Please enter a number from 1 to {num_options}.")
+                typer.echo(
+                    f"❌ Invalid choice. Please enter a number from 1 to {num_options}."
+                )
                 continue
         except typer.Abort:
             typer.echo("\n👋 Exiting...")
